@@ -106,23 +106,7 @@ Sprint 1 — MVP ✅
  Preview page
  Share links
  QR system
-Sprint 2 — Media
- Photo upload (Cloudinary)
- Ambient music per theme
- Theme personalization
-Sprint 3 — AI Emotional Intelligence
- Mood detection
- Emotional summary
- Reflection generation
-Sprint 4 — Memory System
- User accounts
- My experiences
- Timeline view
- Drafts
-Sprint 5 — Virality
- Instagram story export
- Share preview cards (OG images)
- QR card download
+
 Environment Variables
 Variable	Description
 DATABASE_URL	Neon PostgreSQL connection string
