@@ -128,7 +128,10 @@ Variable	Description
 DATABASE_URL	Neon PostgreSQL connection string
 GROQ_API_KEY	Groq API key from console.groq.com
 NEXT_PUBLIC_APP_URL	Your app URL
-License
+## License
+
 MIT
 
-Made with stillness.
+---
+
+*Made with stillness.*
