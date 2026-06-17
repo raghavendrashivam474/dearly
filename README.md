@@ -116,10 +116,8 @@ NEXT_PUBLIC_APP_URL	Your app URL
 
 MIT
 
-<<<<<<< HEAD
+
 ---
 
 *Made with stillness.*
-=======
-Made with stillness.
 
