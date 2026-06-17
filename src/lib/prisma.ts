@@ -1,8 +1,9 @@
-import { PrismaClient } from "@prisma/client/edge"
 import { PrismaNeon } from "@prisma/adapter-neon"
 
+const { PrismaClient } = require("@prisma/client")
+
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+  prisma: any | undefined
 }
 
 function createPrismaClient() {
