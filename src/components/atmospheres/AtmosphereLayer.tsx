@@ -21,7 +21,7 @@ export default function AtmosphereLayer({ theme }: Props) {
     case "sunset-drive":
       return <EmbersAtmosphere />
     case "cosmic":
-      return <StarsAtmosphere />
+      return <StarsAtmosphere color="103, 232, 249" />
     case "soft-healing":
       return <DustAtmosphere color="167, 243, 208" />
     default:

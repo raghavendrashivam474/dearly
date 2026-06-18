@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { themes } from "@/lib/themes"
 import { Theme } from "@/types/experience"
-import { Loader2, ArrowLeft, ArrowRight, Check } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check } from "lucide-react"
+import LoadingScene from "@/components/LoadingScene"
 
 type Step = "write" | "feeling" | "theme" | "generating"
 
@@ -17,6 +18,13 @@ export default function CreatePage() {
   const [emotion, setEmotion] = useState("")
   const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null)
   const [error, setError] = useState("")
+  const [hasApiError, setHasApiError] = useState(false)
+
+  // First 8 words of content — passed to LoadingScene
+  // Memoized so it doesn't recompute on every render
+  const firstWords = useMemo(() => {
+    return content.trim().split(/\s+/).slice(0, 8).join(" ")
+  }, [content])
 
   const handleNext = () => {
     setError("")
@@ -37,6 +45,14 @@ export default function CreatePage() {
     else if (step === "theme") setStep("feeling")
   }
 
+  // Called by LoadingScene after error fragment has been shown
+  // Returns user to theme step with their content intact
+  const handleErrorSurface = () => {
+    setHasApiError(false)
+    setStep("theme")
+    setError("Something didn't quite land. Try again.")
+  }
+
   const handleGenerate = async () => {
     if (!selectedTheme) {
       setError("Choose a world.")
@@ -44,6 +60,7 @@ export default function CreatePage() {
     }
 
     setError("")
+    setHasApiError(false)
     setStep("generating")
 
     try {
@@ -60,16 +77,30 @@ export default function CreatePage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || "Something didn't quite land. Try again.")
-        setStep("theme")
+        // Signal error to LoadingScene — don't immediately leave
+        // LoadingScene will show error fragment, then call handleErrorSurface
+        setHasApiError(true)
         return
       }
 
       router.push(`/preview/${data.id}`)
     } catch {
-      setError("Something didn't quite land. Try again.")
-      setStep("theme")
+      setHasApiError(true)
     }
+  }
+
+  // ── Loading scene — rendered outside the normal step flow ────
+  // Full screen takeover, completely independent of the form UI
+  if (step === "generating") {
+    return (
+      <LoadingScene
+        themeId={selectedTheme!}
+        emotion={emotion || "unnamed"}
+        firstWords={firstWords}
+        hasError={hasApiError}
+        onError={handleErrorSurface}
+      />
+    )
   }
 
   return (
@@ -92,12 +123,13 @@ export default function CreatePage() {
           {(["write", "feeling", "theme"] as Step[]).map((s) => (
             <div
               key={s}
-              className={`h-px transition-all duration-700 ${step === s
-                ? "w-12 bg-zinc-200"
-                : step === "generating" || isStepCompleted(step, s)
+              className={`h-px transition-all duration-700 ${
+                step === s
+                  ? "w-12 bg-zinc-200"
+                  : isStepCompleted(step, s)
                   ? "w-6 bg-zinc-500"
                   : "w-6 bg-zinc-800"
-                }`}
+              }`}
             />
           ))}
         </div>
@@ -126,11 +158,10 @@ export default function CreatePage() {
               </h2>
 
               <p className="text-zinc-500 text-base leading-relaxed mb-8">
-                A memory. A confession. A thought you can&apos;t shake.
-                Write it like no one will read it. We&apos;ll shape it.
+                A memory. A confession. A thought you can&apos;t shake. Write
+                it like no one will read it. We&apos;ll shape it.
               </p>
 
-              {/* Meta — moved ABOVE textarea */}
               <div className="flex items-center justify-between border-b border-zinc-900 pb-3 mb-4 shrink-0">
                 <p className="text-xs text-zinc-600 font-mono">
                   {content.length} characters
@@ -149,6 +180,7 @@ export default function CreatePage() {
               />
             </motion.div>
           )}
+
           {/* STEP 2: FEELING */}
           {step === "feeling" && (
             <motion.div
@@ -180,7 +212,6 @@ export default function CreatePage() {
                 className="w-full bg-transparent border-0 border-b border-zinc-800 focus:border-zinc-500 transition text-2xl text-zinc-200 placeholder:text-zinc-700 focus:outline-none pb-4 font-serif italic"
               />
 
-              {/* Quick suggestions */}
               <div className="mt-8 flex flex-wrap gap-2">
                 {[
                   "nostalgia",
@@ -195,10 +226,11 @@ export default function CreatePage() {
                   <button
                     key={suggestion}
                     onClick={() => setEmotion(suggestion)}
-                    className={`px-3 py-1.5 text-xs rounded-full border transition ${emotion === suggestion
-                      ? "border-zinc-500 bg-zinc-800 text-zinc-100"
-                      : "border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
-                      }`}
+                    className={`px-3 py-1.5 text-xs rounded-full border transition ${
+                      emotion === suggestion
+                        ? "border-zinc-500 bg-zinc-800 text-zinc-100"
+                        : "border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                    }`}
                   >
                     {suggestion}
                   </button>
@@ -226,8 +258,8 @@ export default function CreatePage() {
               </h2>
 
               <p className="text-zinc-500 text-base leading-relaxed mb-12">
-                Six worlds. Each one a different atmosphere.
-                Choose the one that holds your story.
+                Six worlds. Each one a different atmosphere. Choose the one
+                that holds your story.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -238,12 +270,12 @@ export default function CreatePage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: i * 0.05 }}
                     onClick={() => setSelectedTheme(theme.id)}
-                    className={`group p-5 rounded-2xl border text-left transition-all relative overflow-hidden ${selectedTheme === theme.id
-                      ? "border-zinc-400 bg-zinc-800/50"
-                      : "border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 hover:bg-zinc-900/50"
-                      }`}
+                    className={`group p-5 rounded-2xl border text-left transition-all relative overflow-hidden ${
+                      selectedTheme === theme.id
+                        ? "border-zinc-400 bg-zinc-800/50"
+                        : "border-zinc-800 bg-zinc-900/30 hover:border-zinc-700 hover:bg-zinc-900/50"
+                    }`}
                   >
-                    {/* Selected indicator */}
                     {selectedTheme === theme.id && (
                       <motion.div
                         layoutId="selected-check"
@@ -253,10 +285,11 @@ export default function CreatePage() {
                       </motion.div>
                     )}
 
-                    {/* Color dot */}
                     <div
                       className="w-2 h-2 rounded-full mb-4"
-                      style={{ backgroundColor: `rgb(${theme.accentRgb})` }}
+                      style={{
+                        backgroundColor: `rgb(${theme.accentRgb})`,
+                      }}
                     />
 
                     <p className="text-sm font-medium text-zinc-100 mb-2">
@@ -273,39 +306,6 @@ export default function CreatePage() {
                   </motion.button>
                 ))}
               </div>
-            </motion.div>
-          )}
-
-          {/* STEP 4: GENERATING */}
-          {step === "generating" && (
-            <motion.div
-              key="generating"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center"
-            >
-              <motion.div
-                animate={{
-                  scale: [1, 1.1, 1],
-                  opacity: [0.5, 1, 0.5],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="w-2 h-2 rounded-full bg-zinc-300 mx-auto mb-12"
-              />
-
-              <h2 className="font-serif text-3xl md:text-4xl italic font-light text-zinc-200 mb-4">
-                Shaping your experience...
-              </h2>
-
-              <p className="text-zinc-500 text-sm">
-                This usually takes 5 to 10 seconds.
-              </p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -325,47 +325,43 @@ export default function CreatePage() {
         </AnimatePresence>
       </div>
 
-      {/* Footer Nav — Sticky bottom */}
-      {step !== "generating" && (
-        <motion.div
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="fixed bottom-0 left-0 right-0 z-20 bg-zinc-950/80 backdrop-blur-md border-t border-zinc-900"
-        >
-          <div className="max-w-4xl mx-auto px-8 py-5 flex items-center justify-between">
-            {/* Back */}
-            <button
-              onClick={handleBack}
-              disabled={step === "write"}
-              className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-200 transition disabled:opacity-30 disabled:cursor-not-allowed tracking-widest uppercase"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back
-            </button>
+      {/* Footer Nav */}
+      <motion.div
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+        className="fixed bottom-0 left-0 right-0 z-20 bg-zinc-950/80 backdrop-blur-md border-t border-zinc-900"
+      >
+        <div className="max-w-4xl mx-auto px-8 py-5 flex items-center justify-between">
+          <button
+            onClick={handleBack}
+            disabled={step === "write"}
+            className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-200 transition disabled:opacity-30 disabled:cursor-not-allowed tracking-widest uppercase"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back
+          </button>
 
-            {/* Next or Generate */}
-            {step === "theme" ? (
-              <button
-                onClick={handleGenerate}
-                disabled={!selectedTheme}
-                className="px-6 py-3 bg-zinc-100 text-zinc-950 rounded-full text-xs font-medium tracking-widest uppercase hover:bg-white transition disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                Create Experience
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <button
-                onClick={handleNext}
-                className="flex items-center gap-2 text-xs text-zinc-300 hover:text-white transition tracking-widest uppercase"
-              >
-                Continue
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </motion.div>
-      )}
+          {step === "theme" ? (
+            <button
+              onClick={handleGenerate}
+              disabled={!selectedTheme}
+              className="px-6 py-3 bg-zinc-100 text-zinc-950 rounded-full text-xs font-medium tracking-widest uppercase hover:bg-white transition disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              Create Experience
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={handleNext}
+              className="flex items-center gap-2 text-xs text-zinc-300 hover:text-white transition tracking-widest uppercase"
+            >
+              Continue
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </motion.div>
     </main>
   )
 }

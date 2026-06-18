@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from "react"
 
-export default function StarsAtmosphere() {
+type Props = {
+  color?: string
+}
+
+export default function StarsAtmosphere({ color = "192, 132, 252" }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -15,13 +19,24 @@ export default function StarsAtmosphere() {
 
     const resize = () => {
       canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      canvas.height = window.visualViewport?.height ?? window.innerHeight
     }
     resize()
     window.addEventListener("resize", resize)
+    window.visualViewport?.addEventListener("resize", resize)
 
-    const stars: { x: number; y: number; r: number; opacity: number; twinkle: number }[] = []
-    for (let i = 0; i < 200; i++) {
+    const isLowEnd = navigator.hardwareConcurrency <= 4
+    const count = isLowEnd ? 100 : 200
+
+    const stars: {
+      x: number
+      y: number
+      r: number
+      opacity: number
+      twinkle: number
+    }[] = []
+
+    for (let i = 0; i < count; i++) {
       stars.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -40,7 +55,7 @@ export default function StarsAtmosphere() {
 
         ctx.beginPath()
         ctx.globalAlpha = Math.abs(s.opacity)
-        ctx.fillStyle = "rgba(192, 132, 252, 0.8)"
+        ctx.fillStyle = `rgba(${color}, 0.8)`
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
         ctx.fill()
       })
@@ -52,8 +67,9 @@ export default function StarsAtmosphere() {
     return () => {
       cancelAnimationFrame(animationId)
       window.removeEventListener("resize", resize)
+      window.visualViewport?.removeEventListener("resize", resize)
     }
-  }, [])
+  }, [color])
 
   return (
     <canvas

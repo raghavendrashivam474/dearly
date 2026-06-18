@@ -5,13 +5,17 @@ import "./globals.css"
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  display: "swap",
+  display: "swap",       // body font — swap is fine
 })
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
-  display: "swap",
+  display: "block",      // display font — block prevents FOUT during reveals
+  // Preload the weights we actually use:
+  // font-light (300), font-normal (400), italic variants
+  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
 })
 
 export const metadata: Metadata = {
@@ -22,6 +26,13 @@ export const metadata: Metadata = {
     title: "Dearly",
     description: "Turn emotions into experiences.",
     type: "website",
+  },
+  // Prevent mobile browsers from scaling text
+  // Protects typography hierarchy on small viewports
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
   },
 }
 

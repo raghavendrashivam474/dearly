@@ -14,16 +14,28 @@ export default function RainAtmosphere() {
 
     let animationId: number
 
+    // Fix 1 — use visualViewport for correct mobile height
     const resize = () => {
       canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      canvas.height = window.visualViewport?.height ?? window.innerHeight
     }
     resize()
     window.addEventListener("resize", resize)
+    window.visualViewport?.addEventListener("resize", resize)
 
-    const drops: { x: number; y: number; speed: number; length: number; opacity: number }[] = []
+    // Fix 2 — scale particle count to device capability
+    const isLowEnd = navigator.hardwareConcurrency <= 4
+    const count = isLowEnd ? 80 : 150
 
-    for (let i = 0; i < 150; i++) {
+    const drops: {
+      x: number
+      y: number
+      speed: number
+      length: number
+      opacity: number
+    }[] = []
+
+    for (let i = 0; i < count; i++) {
       drops.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -59,6 +71,7 @@ export default function RainAtmosphere() {
     return () => {
       cancelAnimationFrame(animationId)
       window.removeEventListener("resize", resize)
+      window.visualViewport?.removeEventListener("resize", resize)
     }
   }, [])
 

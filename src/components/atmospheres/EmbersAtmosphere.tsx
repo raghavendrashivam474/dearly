@@ -15,13 +15,25 @@ export default function EmbersAtmosphere() {
 
     const resize = () => {
       canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      canvas.height = window.visualViewport?.height ?? window.innerHeight
     }
     resize()
     window.addEventListener("resize", resize)
+    window.visualViewport?.addEventListener("resize", resize)
 
-    const embers: { x: number; y: number; r: number; speed: number; drift: number; opacity: number }[] = []
-    for (let i = 0; i < 80; i++) {
+    const isLowEnd = navigator.hardwareConcurrency <= 4
+    const count = isLowEnd ? 45 : 80
+
+    const embers: {
+      x: number
+      y: number
+      r: number
+      speed: number
+      drift: number
+      opacity: number
+    }[] = []
+
+    for (let i = 0; i < count; i++) {
       embers.push({
         x: Math.random() * canvas.width,
         y: canvas.height + Math.random() * canvas.height,
@@ -61,6 +73,7 @@ export default function EmbersAtmosphere() {
     return () => {
       cancelAnimationFrame(animationId)
       window.removeEventListener("resize", resize)
+      window.visualViewport?.removeEventListener("resize", resize)
     }
   }, [])
 

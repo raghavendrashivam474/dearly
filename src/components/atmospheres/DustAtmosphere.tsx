@@ -19,13 +19,25 @@ export default function DustAtmosphere({ color = "255, 255, 255" }: Props) {
 
     const resize = () => {
       canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      canvas.height = window.visualViewport?.height ?? window.innerHeight
     }
     resize()
     window.addEventListener("resize", resize)
+    window.visualViewport?.addEventListener("resize", resize)
 
-    const particles: { x: number; y: number; r: number; vx: number; vy: number; opacity: number }[] = []
-    for (let i = 0; i < 60; i++) {
+    const isLowEnd = navigator.hardwareConcurrency <= 4
+    const count = isLowEnd ? 30 : 60
+
+    const particles: {
+      x: number
+      y: number
+      r: number
+      vx: number
+      vy: number
+      opacity: number
+    }[] = []
+
+    for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -62,6 +74,7 @@ export default function DustAtmosphere({ color = "255, 255, 255" }: Props) {
     return () => {
       cancelAnimationFrame(animationId)
       window.removeEventListener("resize", resize)
+      window.visualViewport?.removeEventListener("resize", resize)
     }
   }, [color])
 
