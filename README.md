@@ -58,6 +58,8 @@ Each experience is rendered as full-screen cinematic scenes with:
 ---
 
 ## User Flow
+
+```
 Landing
 ↓
 Create
@@ -78,9 +80,7 @@ Click-driven cinematic experience
 └── Final Scene
 ↓
 Share: Link · WhatsApp · QR · Native
-
-text
-
+```
 
 ---
 
