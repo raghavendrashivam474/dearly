@@ -3,17 +3,20 @@
 import { useState } from "react"
 import QRCode from "react-qr-code"
 import { motion, AnimatePresence } from "framer-motion"
-import { Copy, Check, QrCode, X } from "lucide-react"
+import { Copy, Check, QrCode, X, Share2, MessageCircle } from "lucide-react"
 
 type Props = {
   slug: string
+  title?: string
 }
 
-export default function QRShare({ slug }: Props) {
+export default function QRShare({ slug, title = "An Experience" }: Props) {
   const [copied, setCopied] = useState(false)
   const [showQR, setShowQR] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL}/p/${slug}`
+  const shareText = `${title} — an experience on Dearly`
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(shareUrl)
@@ -21,54 +24,104 @@ export default function QRShare({ slug }: Props) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleWhatsApp = () => {
+    const text = encodeURIComponent(`${shareText}\n\n${shareUrl}`)
+    window.open(`https://wa.me/?text=${text}`, "_blank")
+  }
+
+  const handleNative = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareText,
+          url: shareUrl,
+        })
+      } catch {
+        // user cancelled
+      }
+    } else {
+      handleCopy()
+    }
+  }
+
   return (
     <>
-      {/* Share Bar */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 1 }}
-          className="flex items-center gap-3 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-2xl px-5 py-3 shadow-2xl"
+      {/* Floating Share Bar */}
+      <div className="fixed top-6 right-6 z-40">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, delay: 1.5 }}
+        className="flex items-center gap-1 bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-full px-2 py-2 shadow-2xl"
+      >
+        {/* Toggle / Main */}
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-2 px-4 py-2 text-xs text-zinc-300 hover:text-white transition rounded-full hover:bg-white/5"
         >
-          {/* URL */}
-          <p className="text-xs text-zinc-500 max-w-[180px] truncate">
-            {shareUrl}
-          </p>
+          <Share2 className="w-3.5 h-3.5" />
+          <span className="tracking-wide">Share</span>
+        </button>
 
-          {/* Divider */}
-          <div className="w-px h-4 bg-zinc-700" />
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: "auto", opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="flex items-center gap-1 overflow-hidden"
+            >
+              <div className="w-px h-5 bg-white/10 mx-1" />
 
-          {/* Copy Button */}
-          <button
-            onClick={handleCopy}
-            className="flex items-center gap-2 text-xs text-zinc-300 hover:text-white transition"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-green-400" />
-                <span className="text-green-400">Copied</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copy Link</span>
-              </>
-            )}
-          </button>
+              {/* Copy */}
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:text-white transition rounded-full hover:bg-white/5"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Link</span>
+                  </>
+                )}
+              </button>
 
-          {/* Divider */}
-          <div className="w-px h-4 bg-zinc-700" />
+              {/* WhatsApp */}
+              <button
+                onClick={handleWhatsApp}
+                className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:text-white transition rounded-full hover:bg-white/5"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>WhatsApp</span>
+              </button>
 
-          {/* QR Button */}
-          <button
-            onClick={() => setShowQR(true)}
-            className="flex items-center gap-2 text-xs text-zinc-300 hover:text-white transition"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span>QR Code</span>
-          </button>
-        </motion.div>
+              {/* QR */}
+              <button
+                onClick={() => setShowQR(true)}
+                className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:text-white transition rounded-full hover:bg-white/5"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                <span>QR</span>
+              </button>
+
+              {/* Native Share */}
+              <button
+                onClick={handleNative}
+                className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:text-white transition rounded-full hover:bg-white/5"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>More</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
       </div>
 
       {/* QR Modal */}
@@ -78,22 +131,28 @@ export default function QRShare({ slug }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-4"
             onClick={() => setShowQR(false)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 flex flex-col items-center gap-6 max-w-sm w-full mx-4"
+              className="bg-zinc-950 border border-white/10 rounded-3xl p-10 flex flex-col items-center gap-8 max-w-sm w-full"
             >
-              {/* Close */}
-              <div className="w-full flex justify-between items-center">
-                <p className="text-sm text-zinc-300 font-medium">
-                  Scan to open
-                </p>
+              {/* Header */}
+              <div className="w-full flex justify-between items-start">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-mono mb-2">
+                    Scan to open
+                  </p>
+                  <p className="font-serif text-xl italic text-zinc-200">
+                    {title}
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowQR(false)}
                   className="text-zinc-600 hover:text-zinc-300 transition"
@@ -103,29 +162,29 @@ export default function QRShare({ slug }: Props) {
               </div>
 
               {/* QR Code */}
-              <div className="bg-white p-4 rounded-xl">
+              <div className="bg-white p-5 rounded-2xl">
                 <QRCode
                   value={shareUrl}
-                  size={180}
+                  size={200}
                   bgColor="#ffffff"
                   fgColor="#09090b"
                 />
               </div>
 
               {/* URL */}
-              <p className="text-xs text-zinc-600 text-center break-all">
+              <p className="text-xs text-zinc-600 text-center break-all font-mono">
                 {shareUrl}
               </p>
 
-              {/* Copy */}
+              {/* Copy Button */}
               <button
                 onClick={handleCopy}
-                className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm rounded-xl transition flex items-center justify-center gap-2"
+                className="w-full py-3 bg-white text-zinc-950 text-sm rounded-xl transition hover:bg-zinc-200 flex items-center justify-center gap-2 font-medium"
               >
                 {copied ? (
                   <>
-                    <Check className="w-4 h-4 text-green-400" />
-                    <span className="text-green-400">Copied</span>
+                    <Check className="w-4 h-4" />
+                    <span>Copied to clipboard</span>
                   </>
                 ) : (
                   <>

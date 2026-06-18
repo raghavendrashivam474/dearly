@@ -4,73 +4,118 @@ export type ThemeConfig = {
   id: Theme
   label: string
   description: string
+
+  // Background — Layered gradients for depth
   bg: string
+  bgGradient: string
+  vignette: string
+
+  // Text
   text: string
+  textMuted: string
+
+  // Accent — Used for chapter labels, dividers
   accent: string
-  card: string
-  border: string
+  accentRgb: string
+
+  // Atmosphere
+  atmosphere: "rain" | "stars" | "embers" | "dust" | "cosmic" | "soft"
+  atmosphereColor: string
+
+  // Mood
+  mood: string
 }
 
 export const themes: ThemeConfig[] = [
   {
     id: "rainy-nostalgia",
     label: "Rainy Nostalgia",
-    description: "Dark blue. Rain. Slow fade.",
-    bg: "bg-slate-900",
-    text: "text-slate-200",
-    accent: "text-blue-400",
-    card: "bg-slate-800/50 backdrop-blur-sm",
-    border: "border-slate-700",
+    description: "A blue evening. The window. The silence after.",
+    bg: "bg-[#0a1628]",
+    bgGradient: "bg-gradient-to-b from-[#0a1628] via-[#0d1b35] to-[#050c1a]",
+    vignette: "bg-radial-vignette-blue",
+    text: "text-blue-50",
+    textMuted: "text-blue-200/60",
+    accent: "text-blue-300",
+    accentRgb: "147, 197, 253",
+    atmosphere: "rain",
+    atmosphereColor: "147, 197, 253",
+    mood: "Wistful. Slow. Inward.",
   },
   {
     id: "midnight-thoughts",
     label: "Midnight Thoughts",
-    description: "Black. Purple glow. Stars.",
-    bg: "bg-zinc-950",
-    text: "text-zinc-200",
-    accent: "text-purple-400",
-    card: "bg-zinc-900/50 backdrop-blur-sm",
-    border: "border-purple-900",
+    description: "3 AM. The ceiling. The questions.",
+    bg: "bg-[#0a0612]",
+    bgGradient: "bg-gradient-to-b from-[#0a0612] via-[#140924] to-[#050208]",
+    vignette: "bg-radial-vignette-purple",
+    text: "text-purple-50",
+    textMuted: "text-purple-200/60",
+    accent: "text-purple-300",
+    accentRgb: "216, 180, 254",
+    atmosphere: "stars",
+    atmosphereColor: "216, 180, 254",
+    mood: "Vast. Quiet. Honest.",
   },
   {
     id: "warm-memories",
     label: "Warm Memories",
-    description: "Amber. Polaroid. Film grain.",
-    bg: "bg-amber-950",
-    text: "text-amber-100",
-    accent: "text-amber-400",
-    card: "bg-amber-900/40 backdrop-blur-sm",
-    border: "border-amber-800",
+    description: "Golden hour. Old photographs. Laughter.",
+    bg: "bg-[#1a0e05]",
+    bgGradient: "bg-gradient-to-b from-[#1a0e05] via-[#2a1608] to-[#0d0703]",
+    vignette: "bg-radial-vignette-amber",
+    text: "text-amber-50",
+    textMuted: "text-amber-200/60",
+    accent: "text-amber-300",
+    accentRgb: "252, 211, 77",
+    atmosphere: "embers",
+    atmosphereColor: "252, 211, 77",
+    mood: "Warm. Tender. Held.",
   },
   {
     id: "sunset-drive",
     label: "Sunset Drive",
-    description: "Orange. Motion. Open roads.",
-    bg: "bg-orange-950",
-    text: "text-orange-100",
-    accent: "text-orange-400",
-    card: "bg-orange-900/40 backdrop-blur-sm",
-    border: "border-orange-800",
+    description: "The road. The sky burning. Windows down.",
+    bg: "bg-[#1a0a05]",
+    bgGradient: "bg-gradient-to-b from-[#2a0e08] via-[#1a0a05] to-[#0a0402]",
+    vignette: "bg-radial-vignette-orange",
+    text: "text-orange-50",
+    textMuted: "text-orange-200/60",
+    accent: "text-orange-300",
+    accentRgb: "253, 186, 116",
+    atmosphere: "embers",
+    atmosphereColor: "253, 186, 116",
+    mood: "Free. Moving. Open.",
   },
   {
     id: "cosmic",
     label: "Cosmic",
-    description: "Deep space. Infinite. Vast.",
-    bg: "bg-indigo-950",
-    text: "text-indigo-100",
-    accent: "text-cyan-400",
-    card: "bg-indigo-900/40 backdrop-blur-sm",
-    border: "border-indigo-800",
+    description: "The void. The stars. The smallness.",
+    bg: "bg-[#020410]",
+    bgGradient: "bg-gradient-to-b from-[#020410] via-[#080820] to-[#000208]",
+    vignette: "bg-radial-vignette-cyan",
+    text: "text-cyan-50",
+    textMuted: "text-cyan-200/60",
+    accent: "text-cyan-300",
+    accentRgb: "103, 232, 249",
+    atmosphere: "cosmic",
+    atmosphereColor: "103, 232, 249",
+    mood: "Infinite. Distant. Vast.",
   },
   {
     id: "soft-healing",
     label: "Soft Healing",
-    description: "Sage. Gentle. Breathing.",
-    bg: "bg-emerald-950",
-    text: "text-emerald-100",
-    accent: "text-emerald-400",
-    card: "bg-emerald-900/40 backdrop-blur-sm",
-    border: "border-emerald-800",
+    description: "Morning light. Tea. The slow return.",
+    bg: "bg-[#051a13]",
+    bgGradient: "bg-gradient-to-b from-[#082218] via-[#051a13] to-[#020a07]",
+    vignette: "bg-radial-vignette-emerald",
+    text: "text-emerald-50",
+    textMuted: "text-emerald-200/60",
+    accent: "text-emerald-300",
+    accentRgb: "110, 231, 183",
+    atmosphere: "soft",
+    atmosphereColor: "167, 243, 208",
+    mood: "Gentle. Returning. Soft.",
   },
 ]
 

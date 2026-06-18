@@ -20,10 +20,11 @@ export default async function PublicPage({
     <>
       <ExperienceRenderer
         title={experience.title}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         sections={experience.content as any}
         themeId={experience.theme}
       />
-      <QRShare slug={experience.slug} />
+      <QRShare slug={experience.slug} title={experience.title} />
     </>
   )
 }
