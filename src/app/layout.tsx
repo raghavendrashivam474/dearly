@@ -11,10 +11,8 @@ const inter = Inter({
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
-  display: "block",      // display font — block prevents FOUT during reveals
-  // Preload the weights we actually use:
-  // font-light (300), font-normal (400), italic variants
-  weight: ["300", "400", "500"],
+  display: "block",
+  weight: ["400", "500", "600"],  // 300 doesn't exist for Playfair
   style: ["normal", "italic"],
 })
 
