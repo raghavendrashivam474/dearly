@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { groq } from "@/lib/groq"
 import { prisma } from "@/lib/prisma"
+import { getSession } from "@/lib/session"
 import { GenerateRequest } from "@/types/experience"
 
 const SYSTEM_PROMPT = `You are Dearly.
@@ -34,13 +35,37 @@ Rules:
 export async function POST(req: NextRequest) {
   try {
     const body: GenerateRequest = await req.json()
-    const { emotion, theme, content } = body
+    const { emotion, theme, content, email } = body as GenerateRequest & { email?: string }
 
     if (!emotion || !theme || !content) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       )
+    }
+
+    // ── Resolve creatorId ─────────────────────────────────────
+    // Priority 1: active session (magic link already clicked)
+    // Priority 2: email passed from create form (magic link not yet clicked)
+    // Priority 3: null (anonymous creation)
+    const session = await getSession()
+
+    console.log("GENERATE SESSION:", {
+      creatorId: session.creatorId,
+      email: session.email,
+    })
+
+    let creatorId: string | null = session.creatorId ?? null
+
+    if (!creatorId && email) {
+      // Try to find creator by email
+      const creator = await prisma.creator.findUnique({
+        where: { email: email.toLowerCase().trim() },
+      })
+      if (creator) {
+        creatorId = creator.id
+        console.log("GENERATE: attached via email →", creatorId)
+      }
     }
 
     const completion = await groq.chat.completions.create({
@@ -81,6 +106,7 @@ export async function POST(req: NextRequest) {
         content: parsed.sections,
         theme: theme,
         emotion: emotion,
+        ...(creatorId ? { creatorId } : {}),
       },
     })
 

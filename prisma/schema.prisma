@@ -6,6 +6,24 @@ datasource db {
   provider = "postgresql"
 }
 
+model Creator {
+  id          String       @id @default(cuid())
+  email       String       @unique
+  createdAt   DateTime     @default(now())
+  experiences Experience[]
+  magicTokens MagicToken[]
+}
+
+model MagicToken {
+  id        String   @id @default(cuid())
+  token     String   @unique @default(cuid())
+  creatorId String
+  creator   Creator  @relation(fields: [creatorId], references: [id])
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
 model Experience {
   id        String   @id @default(cuid())
   slug      String   @unique @default(cuid())
@@ -14,4 +32,7 @@ model Experience {
   theme     String
   emotion   String
   createdAt DateTime @default(now())
+
+  creatorId String?
+  creator   Creator? @relation(fields: [creatorId], references: [id])
 }
