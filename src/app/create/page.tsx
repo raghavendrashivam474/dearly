@@ -5,11 +5,29 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { themes } from "@/lib/themes"
-import { Theme } from "@/types/experience"
+import { Theme, Audience, Purpose } from "@/types/experience"
 import { ArrowLeft, ArrowRight, Check, Mail, Loader2 } from "lucide-react"
 import LoadingScene from "@/components/LoadingScene"
 
 type Step = "identify" | "write" | "feeling" | "theme" | "generating"
+
+const audienceOptions: { value: Audience; label: string }[] = [
+  { value: "myself", label: "Myself" },
+  { value: "friend", label: "A friend" },
+  { value: "family", label: "Family" },
+  { value: "someone-i-miss", label: "Someone I miss" },
+  { value: "future-me", label: "Future me" },
+  { value: "never-send", label: "Someone I'll never send this to" },
+]
+
+const purposeOptions: { value: Purpose; label: string }[] = [
+  { value: "gratitude", label: "Gratitude" },
+  { value: "farewell", label: "Farewell" },
+  { value: "celebration", label: "Celebration" },
+  { value: "reflection", label: "Reflection" },
+  { value: "healing", label: "Healing" },
+  { value: "appreciation", label: "Appreciation" },
+]
 
 export default function CreatePage() {
   const router = useRouter()
@@ -18,6 +36,8 @@ export default function CreatePage() {
   const [isSendingMagicLink, setIsSendingMagicLink] = useState(false)
   const [content, setContent] = useState("")
   const [emotion, setEmotion] = useState("")
+  const [audience, setAudience] = useState<Audience | null>(null)
+  const [purpose, setPurpose] = useState<Purpose | null>(null)
   const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null)
   const [error, setError] = useState("")
   const [hasApiError, setHasApiError] = useState(false)
@@ -40,7 +60,7 @@ export default function CreatePage() {
         try {
           await fetch("/api/auth/magic", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },  // fix
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email }),
           })
         } catch (err) {
@@ -94,7 +114,9 @@ export default function CreatePage() {
           emotion: emotion || "unnamed",
           theme: selectedTheme,
           content,
-          email: email.trim() || undefined,  // pass email for creatorId resolution
+          email: email.trim() || undefined,
+          audience: audience || undefined,
+          purpose: purpose || undefined,
         }),
       })
 
@@ -221,7 +243,7 @@ export default function CreatePage() {
             </motion.div>
           )}
 
-          {/* STEP 2: FEELING */}
+          {/* STEP 2: FEELING + CONTEXT */}
           {step === "feeling" && (
             <motion.div
               key="feeling"
@@ -237,9 +259,11 @@ export default function CreatePage() {
               <h2 className="font-serif text-4xl md:text-5xl italic font-light leading-tight mb-4 text-zinc-100">
                 Name what you feel.
               </h2>
-              <p className="text-zinc-500 text-base leading-relaxed mb-12">
+              <p className="text-zinc-500 text-base leading-relaxed mb-10">
                 Just one word. Optional, but it helps us listen better.
               </p>
+
+              {/* Emotion input */}
               <input
                 type="text"
                 placeholder="nostalgia, longing, gratitude, grief..."
@@ -248,7 +272,9 @@ export default function CreatePage() {
                 autoFocus
                 className="w-full bg-transparent border-0 border-b border-zinc-800 focus:border-zinc-500 transition text-2xl text-zinc-200 placeholder:text-zinc-700 focus:outline-none pb-4 font-serif italic"
               />
-              <div className="mt-8 flex flex-wrap gap-2">
+
+              {/* Emotion chips */}
+              <div className="mt-6 flex flex-wrap gap-2">
                 {["nostalgia", "longing", "gratitude", "grief", "wonder", "regret", "hope", "love"].map(
                   (suggestion) => (
                     <button
@@ -264,6 +290,53 @@ export default function CreatePage() {
                     </button>
                   )
                 )}
+              </div>
+
+              {/* Divider */}
+              <div className="mt-12 mb-8 w-12 h-px bg-zinc-800 mx-auto" />
+
+              {/* Who is this for — optional context */}
+              <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-600 mb-4 font-mono">
+                Who is this for? <span className="text-zinc-700 normal-case tracking-normal italic">(optional)</span>
+              </p>
+              <div className="flex flex-wrap gap-2 mb-10">
+                {audienceOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() =>
+                      setAudience(audience === option.value ? null : option.value)
+                    }
+                    className={`px-3 py-1.5 text-xs rounded-full border transition ${
+                      audience === option.value
+                        ? "border-zinc-500 bg-zinc-800 text-zinc-100"
+                        : "border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Purpose — optional context */}
+              <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-600 mb-4 font-mono">
+                What is the purpose? <span className="text-zinc-700 normal-case tracking-normal italic">(optional)</span>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {purposeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() =>
+                      setPurpose(purpose === option.value ? null : option.value)
+                    }
+                    className={`px-3 py-1.5 text-xs rounded-full border transition ${
+                      purpose === option.value
+                        ? "border-zinc-500 bg-zinc-800 text-zinc-100"
+                        : "border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
             </motion.div>
           )}

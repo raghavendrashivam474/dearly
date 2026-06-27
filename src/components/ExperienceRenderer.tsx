@@ -13,26 +13,32 @@ type Props = {
   sections: Section[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   themeId: any
+  emotionalArc?: string[]
+  closing?: string | null
 }
 
 type Direction = "forward" | "backward"
+
+// Dearly's signature closing — always appears after AI closing
+const DEARLY_SIGNATURE = {
+  line1: "Some stories stay.",
+  line2: "Not on paper.",
+  line3: "But in people.",
+}
 
 export default function ExperienceRenderer({
   title,
   sections,
   themeId,
+  closing,
 }: Props) {
   const theme = getTheme(themeId)
 
   const [currentScene, setCurrentScene] = useState(0)
   const [direction, setDirection] = useState<Direction>("forward")
-
-  // Reveal state — only meaningful for content scenes
   const [isRevealed, setIsRevealed] = useState(false)
-  // When true, SceneText skips animation and renders instantly
   const [isInstant, setIsInstant] = useState(false)
 
-  // Touch tracking for swipe gestures
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
   const touchStartTime = useRef<number | null>(null)
@@ -44,7 +50,6 @@ export default function ExperienceRenderer({
   const isContent = !isTitle && !isFinal
   const currentSection = isContent ? sections[currentScene - 1] : null
 
-  // Reset reveal state whenever scene changes
   useEffect(() => {
     setIsRevealed(false)
     setIsInstant(false)
@@ -62,21 +67,16 @@ export default function ExperienceRenderer({
     setCurrentScene((s) => Math.max(s - 1, 0))
   }, [])
 
-  // Central interaction handler — respects the reveal contract
   const handleAdvance = useCallback(() => {
     if (isTitle || isFinal) {
-      // Title and final: always advance on first interaction
       if (!isFinal) goNext()
       return
     }
-
     if (isContent) {
       if (!isRevealed) {
-        // First interaction during reveal: complete instantly
         setIsInstant(true)
         setIsRevealed(true)
       } else {
-        // Second interaction after reveal: advance
         goNext()
       }
     }
@@ -86,11 +86,7 @@ export default function ExperienceRenderer({
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (
-        e.key === "ArrowRight" ||
-        e.key === " " ||
-        e.key === "Enter"
-      ) {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "Enter") {
         e.preventDefault()
         handleAdvance()
       } else if (e.key === "ArrowLeft") {
@@ -123,22 +119,18 @@ export default function ExperienceRenderer({
       const deltaY = e.changedTouches[0].clientY - touchStartY.current
       const duration = Date.now() - touchStartTime.current
 
-      // Must be primarily horizontal, fast enough, and long enough
       const isHorizontal = Math.abs(deltaX) > Math.abs(deltaY)
       const isLongEnough = Math.abs(deltaX) > 50
       const isFastEnough = duration < 400
 
       if (isHorizontal && isLongEnough && isFastEnough) {
         if (deltaX < 0) {
-          // Swipe left → advance (respects reveal contract)
           handleAdvance()
         } else {
-          // Swipe right → go back
           goPrev()
         }
       }
 
-      // Reset
       touchStartX.current = null
       touchStartY.current = null
       touchStartTime.current = null
@@ -147,8 +139,6 @@ export default function ExperienceRenderer({
   )
 
   // ── Transition variants ───────────────────────────────────────
-  // Forward: enter from slight scale-up (going deeper in)
-  // Backward: enter from slight scale-down (surfacing)
 
   const sceneVariants = {
     enter: (dir: Direction) => ({
@@ -173,7 +163,6 @@ export default function ExperienceRenderer({
     ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
   }
 
-  // Title exit gets slightly more time — most important single transition
   const titleTransition = {
     duration: 1.4,
     ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
@@ -190,7 +179,7 @@ export default function ExperienceRenderer({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Atmosphere — persistent, never remounts */}
+      {/* Atmosphere */}
       <AtmosphereLayer theme={themeId} />
 
       {/* Vignette */}
@@ -202,8 +191,12 @@ export default function ExperienceRenderer({
       <div className="film-grain" />
 
       {/* Scene Content */}
-      <div className="relative z-10 h-[100dvh] w-full flex items-center justify-center px-6 select-none pointer-events-none">
-        <AnimatePresence mode="wait" custom={direction}>
+      <div
+        className={`relative z-10 h-[100dvh] w-full flex justify-center px-6 select-none pointer-events-none ${isFinal
+          ? "items-start overflow-y-auto pt-16 pb-24"
+          : "items-center"
+          }`}
+      >        <AnimatePresence mode="wait" custom={direction}>
 
           {/* TITLE SCENE */}
           {isTitle && (
@@ -277,6 +270,7 @@ export default function ExperienceRenderer({
           )}
 
           {/* FINAL SCENE */}
+          {/* FINAL SCENE */}
           {isFinal && (
             <motion.div
               key="final"
@@ -286,38 +280,79 @@ export default function ExperienceRenderer({
               animate="center"
               exit="exit"
               transition={sceneTransition}
-              className="text-center max-w-3xl"
+              className="text-center max-w-3xl w-full px-4"
             >
+              {/* AI-generated closing — unique to this experience */}
+              {closing && (
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1.2, delay: 0.3 }}
+                  className="font-serif text-2xl md:text-3xl lg:text-4xl italic font-light leading-[1.35] mb-10 opacity-90"
+                >
+                  {closing}
+                </motion.p>
+              )}
+
+              {/* Divider between AI closing and Dearly signature */}
+              {closing && (
+                <motion.div
+                  initial={{ opacity: 0, scaleX: 0 }}
+                  animate={{ opacity: 1, scaleX: 1 }}
+                  transition={{ duration: 1.1, delay: 1.0 }}
+                  className="w-16 h-px mx-auto mb-10"
+                  style={{
+                    backgroundColor: `rgb(${theme.accentRgb})`,
+                    opacity: 0.25,
+                  }}
+                />
+              )}
+
+              {/* Dearly signature */}
               <motion.p
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.5, delay: 0.4 }}
-                className="font-serif text-3xl md:text-5xl lg:text-6xl italic font-light leading-[1.15] mb-6"
+                transition={{
+                  duration: 1.2,
+                  delay: closing ? 1.5 : 0.4,
+                }}
+                className="font-serif text-3xl md:text-5xl lg:text-6xl italic font-light leading-[1.15] mb-4"
               >
-                Some stories stay.
+                {DEARLY_SIGNATURE.line1}
               </motion.p>
+
               <motion.p
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.5, delay: 1 }}
-                className="font-serif text-3xl md:text-5xl lg:text-6xl italic font-light leading-[1.15] mb-6 opacity-75"
+                transition={{
+                  duration: 1.2,
+                  delay: closing ? 2.0 : 1.0,
+                }}
+                className="font-serif text-3xl md:text-5xl lg:text-6xl italic font-light leading-[1.15] mb-4 opacity-75"
               >
-                Not on paper.
+                {DEARLY_SIGNATURE.line2}
               </motion.p>
+
               <motion.p
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.5, delay: 1.6 }}
+                transition={{
+                  duration: 1.2,
+                  delay: closing ? 2.5 : 1.6,
+                }}
                 className="font-serif text-3xl md:text-5xl lg:text-6xl italic font-light leading-[1.15] opacity-50"
               >
-                But in people.
+                {DEARLY_SIGNATURE.line3}
               </motion.p>
 
               <motion.div
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{ opacity: 1, scaleX: 1 }}
-                transition={{ duration: 1.5, delay: 2.2 }}
-                className={`mt-20 w-32 h-px mx-auto`}
+                transition={{
+                  duration: 1.2,
+                  delay: closing ? 3.0 : 2.2,
+                }}
+                className="mt-14 w-32 h-px mx-auto"
                 style={{
                   backgroundColor: `rgb(${theme.accentRgb})`,
                   opacity: 0.4,
@@ -325,10 +360,13 @@ export default function ExperienceRenderer({
               />
 
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.5, delay: 2.6 }}
-                className="mt-10 space-y-2"
+                transition={{
+                  duration: 1.2,
+                  delay: closing ? 3.4 : 2.6,
+                }}
+                className="mt-8 space-y-2"
               >
                 <p
                   className={`text-[10px] uppercase tracking-[0.6em] ${theme.accent} opacity-60 font-mono`}
@@ -341,8 +379,11 @@ export default function ExperienceRenderer({
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1.5, delay: 3.2 }}
-                className="mt-16 text-sm italic opacity-50"
+                transition={{
+                  duration: 1.2,
+                  delay: closing ? 3.8 : 3.2,
+                }}
+                className="mt-10 text-sm italic opacity-50 pb-8"
               >
                 Share this with someone who needs to feel it.
               </motion.p>
@@ -351,8 +392,7 @@ export default function ExperienceRenderer({
         </AnimatePresence>
       </div>
 
-      {/* Click Zones — left = back, right = advance */}
-      {/* Back zone — only when not on first scene */}
+      {/* Click Zones */}
       {currentScene > 0 && (
         <button
           onClick={goPrev}
@@ -361,7 +401,6 @@ export default function ExperienceRenderer({
         />
       )}
 
-      {/* Advance zone — right half, always present except final */}
       {!isFinal && (
         <button
           onClick={handleAdvance}
@@ -370,7 +409,7 @@ export default function ExperienceRenderer({
         />
       )}
 
-      {/* Back button — top left */}
+      {/* Back button */}
       <AnimatePresence>
         {currentScene > 0 && (
           <motion.button
@@ -390,47 +429,127 @@ export default function ExperienceRenderer({
         )}
       </AnimatePresence>
 
-      {/* Continue button — bottom right */}
+      {/* Continue button */}
       <AnimatePresence>
-        {!isFinal && (
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{
-              duration: 0.6,
-              // Title: wait for title animation to breathe
-              // Content revealed: appear promptly
-              // Content revealing: appear at normal pace
-              delay: isTitle ? 2 : isRevealed ? 0.2 : 1.2,
-            }}
-            onClick={(e) => {
-              e.stopPropagation()
-              handleAdvance()
-            }}
-            className="fixed bottom-10 right-8 z-40 flex items-center gap-3 group pointer-events-auto"
+        {isFinal && (
+          <motion.div
+            key="final"
+            custom={direction}
+            variants={sceneVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={sceneTransition}
+            className="text-center max-w-3xl px-4 max-h-[80dvh] overflow-y-auto pt-6 pb-24"
           >
-            <span
-              className={`text-xs uppercase tracking-[0.4em] ${theme.accent} opacity-70 group-hover:opacity-100 transition font-mono`}
-            >
-              {isTitle ? "Begin" : "Continue"}
-            </span>
-            <motion.div
-              animate={{ x: [0, 4, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className={`w-8 h-8 rounded-full border opacity-70 group-hover:opacity-100 flex items-center justify-center transition`}
-              style={{ borderColor: `rgb(${theme.accentRgb})` }}
-            >
-              <ChevronRight
-                className="w-3.5 h-3.5"
-                style={{ color: `rgb(${theme.accentRgb})` }}
+            {/* AI-generated closing — unique to this experience */}
+            {closing && (
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.5, delay: 0.3 }}
+                className="font-serif text-2xl md:text-3xl lg:text-4xl italic font-light leading-[1.3] mb-10 opacity-90"
+              >
+                {closing}
+              </motion.p>
+            )}
+
+            {/* Divider between AI closing and Dearly signature */}
+            {closing && (
+              <motion.div
+                initial={{ opacity: 0, scaleX: 0 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                transition={{ duration: 1.2, delay: 1.2 }}
+                className="w-16 h-px mx-auto mb-10"
+                style={{
+                  backgroundColor: `rgb(${theme.accentRgb})`,
+                  opacity: 0.25,
+                }}
               />
+            )}
+
+            {/* Dearly signature closing — always present */}
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 1.5,
+                delay: closing ? 1.8 : 0.4,
+              }}
+              className="font-serif text-3xl md:text-5xl lg:text-6xl italic font-light leading-[1.15] mb-4"
+            >
+              {DEARLY_SIGNATURE.line1}
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 1.5,
+                delay: closing ? 2.4 : 1.0,
+              }}
+              className="font-serif text-3xl md:text-5xl lg:text-6xl italic font-light leading-[1.15] mb-4 opacity-75"
+            >
+              {DEARLY_SIGNATURE.line2}
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 1.5,
+                delay: closing ? 3.0 : 1.6,
+              }}
+              className="font-serif text-3xl md:text-5xl lg:text-6xl italic font-light leading-[1.15] opacity-50"
+            >
+              {DEARLY_SIGNATURE.line3}
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{
+                duration: 1.5,
+                delay: closing ? 3.6 : 2.2,
+              }}
+              className="mt-14 w-32 h-px mx-auto"
+              style={{
+                backgroundColor: `rgb(${theme.accentRgb})`,
+                opacity: 0.4,
+              }}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 1.5,
+                delay: closing ? 4.0 : 2.6,
+              }}
+              className="mt-8 space-y-2"
+            >
+              <p
+                className={`text-[10px] uppercase tracking-[0.6em] ${theme.accent} opacity-60 font-mono`}
+              >
+                An experience by
+              </p>
+              <p className="font-serif text-2xl italic">Dearly</p>
             </motion.div>
-          </motion.button>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                duration: 1.5,
+                delay: closing ? 4.4 : 3.2,
+              }}
+              className="mt-10 text-sm italic opacity-50"
+            >
+              Share this with someone who needs to feel it.
+            </motion.p>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Progress dots — bottom center */}
+      {/* Progress dots */}
       <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 pointer-events-auto">
         {Array.from({ length: totalScenes }).map((_, i) => (
           <button
@@ -440,18 +559,17 @@ export default function ExperienceRenderer({
               setCurrentScene(i)
             }}
             aria-label={`Go to scene ${i + 1}`}
-            className={`h-1 rounded-full transition-all duration-500 ${
-              i === currentScene
-                ? "w-8 bg-current opacity-90"
-                : i < currentScene
+            className={`h-1 rounded-full transition-all duration-500 ${i === currentScene
+              ? "w-8 bg-current opacity-90"
+              : i < currentScene
                 ? "w-1.5 bg-current opacity-50"
                 : "w-1.5 bg-current opacity-20"
-            }`}
+              }`}
           />
         ))}
       </div>
 
-      {/* Keyboard hint — title scene only, desktop only */}
+      {/* Keyboard hint */}
       <AnimatePresence>
         {isTitle && (
           <motion.div

@@ -3,10 +3,9 @@ import { Suspense } from "react"
 import ExperienceRenderer from "@/components/ExperienceRenderer"
 import QRShare from "@/components/QRShare"
 import { notFound } from "next/navigation"
+import { parseContent } from "@/lib/content"
 import type { Metadata } from "next"
 
-// ── Metadata for share previews ───────────────────────────────
-// WhatsApp, iMessage, Twitter, Slack all read these
 export async function generateMetadata({
   params,
 }: {
@@ -16,14 +15,11 @@ export async function generateMetadata({
 
   const experience = await prisma.experience.findUnique({
     where: { slug },
-    // Only fetch what metadata needs — title and theme
     select: { title: true, theme: true },
   })
 
   if (!experience) {
-    return {
-      title: "Experience not found — Dearly",
-    }
+    return { title: "Experience not found — Dearly" }
   }
 
   const description = "A cinematic experience made just for you."
@@ -45,7 +41,6 @@ export async function generateMetadata({
   }
 }
 
-// ── Experience fetcher ────────────────────────────────────────
 async function ExperienceContent({ slug }: { slug: string }) {
   const experience = await prisma.experience.findUnique({
     where: { slug },
@@ -53,19 +48,22 @@ async function ExperienceContent({ slug }: { slug: string }) {
 
   if (!experience) return notFound()
 
+  const { sections, emotionalArc, closing } = parseContent(experience.content)
+
   return (
     <>
       <ExperienceRenderer
         title={experience.title}
-        sections={experience.content as any}
+        sections={sections}
         themeId={experience.theme}
+        emotionalArc={emotionalArc}
+        closing={closing}
       />
       <QRShare slug={experience.slug} title={experience.title} />
     </>
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────
 export default async function PublicPage({
   params,
 }: {
@@ -76,9 +74,6 @@ export default async function PublicPage({
   return (
     <Suspense
       fallback={
-        // Inline fallback — same as loading.tsx but scoped to this boundary
-        // loading.tsx handles route-level loading
-        // This Suspense handles component-level streaming
         <div
           className="fixed inset-0 flex items-center justify-center"
           style={{ background: "#09090b" }}
